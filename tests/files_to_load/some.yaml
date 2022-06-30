@@ -1,0 +1,6 @@
+one: value0
+two:
+  - value1
+  - 10
+  - another_key:
+      yet_another_key: [5, 6, 7]
