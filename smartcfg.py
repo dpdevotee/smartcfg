@@ -1,8 +1,8 @@
+import json
 import os
 from pathlib import Path
 
 import yaml
-
 
 MODE_KEY = '_mode'
 MODES_KEY = '_modes'
@@ -27,11 +27,41 @@ class Config:
             with open(Path(base_dir).parent / path, 'r') as fr:
                 return fr.read().strip()
 
+        def construct_yaml(loader, node):
+            if isinstance(node, yaml.ScalarNode):
+                file = loader.construct_scalar(node)
+                with open(Path(base_dir).parent / file, 'r') as fr:
+                    return yaml.safe_load(fr.read())
+            file = loader.construct_sequence(node)
+            if len(file) != 2:
+                raise ConfigError(f'List notations of !yaml tag requires '
+                                  f'2 arguments, {len(file)} were given.')
+            file, path = file
+            with open(Path(base_dir).parent / file, 'r') as fr:
+                content = yaml.safe_load(fr.read())
+            return self._get_value_by_path(content, path)
+
+        def construct_json(loader, node):
+            if isinstance(node, yaml.ScalarNode):
+                file = loader.construct_scalar(node)
+                with open(Path(base_dir).parent / file, 'r') as fr:
+                    return json.load(fr)
+            file = loader.construct_sequence(node)
+            if len(file) != 2:
+                raise ConfigError(f'List notations of !yaml tag requires '
+                                  f'2 arguments, {len(file)} were given.')
+            file, path = file
+            with open(Path(base_dir).parent / file, 'r') as fr:
+                content = json.load(fr)
+            return self._get_value_by_path(content, path)
+
         class ExtendedSafeLoader(yaml.SafeLoader):
             pass
 
         ExtendedSafeLoader.add_constructor('!env', construct_env)
         ExtendedSafeLoader.add_constructor('!text', construct_text)
+        ExtendedSafeLoader.add_constructor('!yaml', construct_yaml)
+        ExtendedSafeLoader.add_constructor('!json', construct_json)
         ExtendedSafeLoader.add_constructor('!IN_MODE', construct_dummy)
         cfg = yaml.load(stream, Loader=ExtendedSafeLoader)
 
@@ -72,9 +102,9 @@ class Config:
 
         return construct_in_mode
 
-    def __call__(self, path):
+    @staticmethod
+    def _get_value_by_path(obj, path):
         path = path.split(sep='.')
-        obj = self._cfg
         for i, item in enumerate(path):
             try:
                 if isinstance(obj, list):
@@ -84,3 +114,6 @@ class Config:
                 current_path = '.'.join(path[:i + 1])
                 raise ConfigError(f'Path `{current_path}` does not exist')
         return obj
+
+    def __call__(self, path):
+        return self._get_value_by_path(self._cfg, path)

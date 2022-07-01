@@ -173,3 +173,97 @@ def test_in_mode_unknown_mode():
                          production: 'value2'
         """, base_dir)
     assert str(err.value) == 'Value "production" is not in `_modes`'
+
+
+def test_load_yaml():
+    base_dir = str(Path(__file__).resolve())
+    abs_path = Path(__file__).parent / 'files_to_load/some.yaml'
+    cfg = Config(f"""
+        a: 1
+        b: hello
+        c:
+          - one
+          - two
+          - 3
+          - another_key:
+              key1: !yaml {abs_path}
+              key2: !yaml [{abs_path}, two.2.another_key.yet_another_key]
+        """, base_dir)
+    assert cfg('c.3.another_key.key1') == {
+        'one': 'value0',
+        'two': [
+            'value1',
+            10,
+            {'another_key': {'yet_another_key': [5, 6, 7]}},
+        ],
+    }
+    assert cfg('c.3.another_key.key2') == [5, 6, 7]
+
+    rel_path = 'files_to_load/some.yaml'
+    cfg = Config(f"""
+        a: 1
+        b: hello
+        c:
+          - one
+          - two
+          - 3
+          - another_key:
+              key1: !yaml {rel_path}
+              key2: !yaml [{rel_path}, two.2.another_key.yet_another_key]
+        """, base_dir)
+    assert cfg('c.3.another_key.key1') == {
+        'one': 'value0',
+        'two': [
+            'value1',
+            10,
+            {'another_key': {'yet_another_key': [5, 6, 7]}},
+        ],
+    }
+    assert cfg('c.3.another_key.key2') == [5, 6, 7]
+
+
+def test_load_json():
+    base_dir = str(Path(__file__).resolve())
+    abs_path = Path(__file__).parent / 'files_to_load/some.json'
+    cfg = Config(f"""
+        a: 1
+        b: hello
+        c:
+          - one
+          - two
+          - 3
+          - another_key:
+              key1: !json {abs_path}
+              key2: !json [{abs_path}, two.2.another_key.yet_another_key]
+        """, base_dir)
+    assert cfg('c.3.another_key.key1') == {
+        'one': 'value0',
+        'two': [
+            'value1',
+            10,
+            {'another_key': {'yet_another_key': [5, 6, 7]}},
+        ],
+    }
+    assert cfg('c.3.another_key.key2') == [5, 6, 7]
+
+    rel_path = 'files_to_load/some.json'
+    cfg = Config(f"""
+        a: 1
+        b: hello
+        c:
+          - one
+          - two
+          - 3
+          - another_key:
+              key1: !json {rel_path}
+              key2: !json [{rel_path}, two.2.another_key.yet_another_key]
+        """, base_dir)
+    assert cfg('c.3.another_key.key1') == {
+        'one': 'value0',
+        'two': [
+            'value1',
+            10,
+            {'another_key': {'yet_another_key': [5, 6, 7]}},
+        ],
+    }
+    assert cfg('c.3.another_key.key2') == [5, 6, 7]
