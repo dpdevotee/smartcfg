@@ -2,11 +2,11 @@ from pathlib import Path
 
 import pytest
 
-from smartcfg import Config, ConfigError
+from smartcfg import Config, ConfigError, SmartConfig
 
 
 def test_load_dict():
-    base_dir = str(Path(__file__).resolve())
+    base_dir = Path(__file__).parent.resolve()
     cfg = Config("""
     a: 1
     b: hello
@@ -38,7 +38,7 @@ def test_load_dict():
 
 
 def test_load_env(set_env):
-    base_dir = str(Path(__file__).resolve())
+    base_dir = Path(__file__).parent.resolve()
     set_env('MY_VAR', 'hello')
     cfg = Config("""
     a: 1
@@ -55,7 +55,7 @@ def test_load_env(set_env):
 
 
 def test_load_text():
-    base_dir = str(Path(__file__).resolve())
+    base_dir = str(Path(__file__).parent.resolve())
     abs_path = Path(__file__).parent / 'files_to_load/some.txt'
     cfg = Config(f"""
         a: 1
@@ -90,7 +90,7 @@ def test_load_text():
 
 
 def test_in_mode_broken_config():
-    base_dir = str(Path(__file__).resolve())
+    base_dir = str(Path(__file__).parent.resolve())
     with pytest.raises(ConfigError) as err:
         Config("_mode: testing", base_dir)
     assert str(err.value) == '`_mode` key is provided but `_modes` is not'
@@ -145,7 +145,7 @@ def test_in_mode(set_env):
                          stable: 'value2'
           - 3
     """)
-    base_dir = str(Path(__file__).resolve())
+    base_dir = str(Path(__file__).parent.resolve())
 
     set_env('MODE', 'testing')
     cfg = Config(stream, base_dir)
@@ -161,7 +161,7 @@ def test_in_mode(set_env):
 
 
 def test_in_mode_unknown_mode():
-    base_dir = str(Path(__file__).resolve())
+    base_dir = str(Path(__file__).parent.resolve())
     with pytest.raises(ConfigError) as err:
         Config("""
             _mode: testing
@@ -175,8 +175,25 @@ def test_in_mode_unknown_mode():
     assert str(err.value) == 'Value "production" is not in `_modes`'
 
 
+def test_mode_absent():
+    base_dir = str(Path(__file__).parent.resolve())
+    with pytest.raises(ConfigError) as err:
+        Config("""
+            _mode: testing
+            _modes:
+              - testing
+              - production
+              - ci
+            another_key: !IN_MODE
+                         testing: value1
+                         production: 'value2'
+        """, base_dir)
+    assert str(err.value) == ('Value for mode "ci" is not '
+                              'specified in tag !IN_MODE')
+
+
 def test_load_yaml():
-    base_dir = str(Path(__file__).resolve())
+    base_dir = str(Path(__file__).parent.resolve())
     abs_path = Path(__file__).parent / 'files_to_load/some.yaml'
     cfg = Config(f"""
         a: 1
@@ -223,7 +240,7 @@ def test_load_yaml():
 
 
 def test_load_json():
-    base_dir = str(Path(__file__).resolve())
+    base_dir = str(Path(__file__).parent.resolve())
     abs_path = Path(__file__).parent / 'files_to_load/some.json'
     cfg = Config(f"""
         a: 1
@@ -267,3 +284,12 @@ def test_load_json():
         ],
     }
     assert cfg('c.3.another_key.key2') == [5, 6, 7]
+
+
+def test_smart_config():
+    cfg = SmartConfig(Path(__file__).parent / 'files_to_load/nest/main.yaml')
+    assert cfg._cfg is None
+    assert cfg._stream is None
+    assert cfg('key1.c.x') == 'y'
+    assert cfg('key2') == 6
+    assert cfg('key3') == 6

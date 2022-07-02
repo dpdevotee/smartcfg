@@ -24,34 +24,34 @@ class Config:
     def __init__(self, stream, base_dir):
         def construct_text(loader, node):
             path = loader.construct_scalar(node)
-            with open(Path(base_dir).parent / path, 'r') as fr:
+            with open(Path(base_dir) / path, 'r') as fr:
                 return fr.read().strip()
 
         def construct_yaml(loader, node):
             if isinstance(node, yaml.ScalarNode):
                 file = loader.construct_scalar(node)
-                with open(Path(base_dir).parent / file, 'r') as fr:
+                with open(Path(base_dir) / file, 'r') as fr:
                     return yaml.safe_load(fr.read())
             file = loader.construct_sequence(node)
             if len(file) != 2:
                 raise ConfigError(f'List notations of !yaml tag requires '
                                   f'2 arguments, {len(file)} were given.')
             file, path = file
-            with open(Path(base_dir).parent / file, 'r') as fr:
+            with open(Path(base_dir) / file, 'r') as fr:
                 content = yaml.safe_load(fr.read())
             return self._get_value_by_path(content, path)
 
         def construct_json(loader, node):
             if isinstance(node, yaml.ScalarNode):
                 file = loader.construct_scalar(node)
-                with open(Path(base_dir).parent / file, 'r') as fr:
+                with open(Path(base_dir) / file, 'r') as fr:
                     return json.load(fr)
             file = loader.construct_sequence(node)
             if len(file) != 2:
                 raise ConfigError(f'List notations of !yaml tag requires '
                                   f'2 arguments, {len(file)} were given.')
             file, path = file
-            with open(Path(base_dir).parent / file, 'r') as fr:
+            with open(Path(base_dir) / file, 'r') as fr:
                 content = json.load(fr)
             return self._get_value_by_path(content, path)
 
@@ -98,6 +98,10 @@ class Config:
             for k in mapping:
                 if k not in modes:
                     raise ConfigError(f'Value "{k}" is not in `{MODES_KEY}`')
+            for k in modes:
+                if k not in mapping:
+                    raise ConfigError(f'Value for mode "{k}" is '
+                                      'not specified in tag !IN_MODE')
             return mapping[mode]
 
         return construct_in_mode
@@ -117,3 +121,21 @@ class Config:
 
     def __call__(self, path):
         return self._get_value_by_path(self._cfg, path)
+
+
+class SmartConfig:
+    def __init__(self, path):
+        self._path = path
+        self._stream = None
+        self._cfg = None
+
+    def _lazy_load(self):
+        with open(self._path, 'r') as fr:
+            self._stream = fr.read()
+            self._cfg = Config(self._stream,
+                               base_dir=Path(self._path).resolve().parent)
+
+    def __call__(self, path):
+        if self._stream is None:
+            self._lazy_load()
+        return self._cfg(path)

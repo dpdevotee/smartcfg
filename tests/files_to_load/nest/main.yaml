@@ -1,0 +1,19 @@
+_mode: testing
+_modes:
+  - testing
+  - production
+  - ci
+
+key1:
+  a: 1
+  b: 2
+  c:
+    x: y
+key2: !IN_MODE
+      testing: !yaml ['../some.yaml', 'two.2.another_key.yet_another_key.1']
+      production: incorrect
+      ci: incorrect
+key3: !IN_MODE
+      testing: !json [../some.json, two.2.another_key.yet_another_key.1]
+      production: incorrect
+      ci: incorrect
