@@ -134,6 +134,10 @@ file2_value = cfg('val_from_file2')  # 6
 
 file3_value = cfg('val_from_file3')  # 'We all came out to Mountreux\non the lake Geneva shoreline.'
 ```
+While you are using `!yaml`, `!json` and `!text` tags you can specify absolute
+paths or paths relative to the directory where configuration YAML file is
+located.
+
 Note that when value is loaded from TEXT file, leading and trailing
 whitespaces are stripped.
 
