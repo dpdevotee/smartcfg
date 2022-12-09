@@ -178,7 +178,7 @@ Same with `databases.default.password`:
 * and so on.
 
 ## Tests
-Run test:
+Run tests:
 ```bash
 pip install -r requirements.txt
 pytest
