@@ -34,7 +34,7 @@ class Config:
                     return yaml.safe_load(fr.read())
             file = loader.construct_sequence(node)
             if len(file) != 2:
-                raise ConfigError(f'List notations of !yaml tag requires '
+                raise ConfigError('List notations of !yaml tag requires '
                                   f'2 arguments, {len(file)} were given.')
             file, path = file
             with open(Path(base_dir) / file, 'r') as fr:
@@ -48,7 +48,7 @@ class Config:
                     return json.load(fr)
             file = loader.construct_sequence(node)
             if len(file) != 2:
-                raise ConfigError(f'List notations of !yaml tag requires '
+                raise ConfigError('List notations of !yaml tag requires '
                                   f'2 arguments, {len(file)} were given.')
             file, path = file
             with open(Path(base_dir) / file, 'r') as fr:
@@ -124,6 +124,13 @@ class Config:
 
 
 class SmartConfig:
+    """Class that load configuration YAML files.
+
+    Parameters
+    ----------
+    path : str
+        Path to configuration YAML file.
+    """
     def __init__(self, path):
         self._path = path
         self._stream = None

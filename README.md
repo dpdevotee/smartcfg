@@ -1,6 +1,6 @@
 # Smartcfg
 
-This is library that allows python programs load configuration parameters
+This is a library that allows python programs load configuration parameters
 from YAML files. YAML file can contain different values for different
 runtime environments. Parameter values can be specified directly in the YAML
 file, in other YAML/JSON/TEXT files or in environment variables.
@@ -16,8 +16,8 @@ python setup.py install
 ## Usage
 
 YAML file with configuration MUST have at leas two keys: `_mode` and `_modes`:
-* key `_modes` specifies list of names of supported runtime environments;
-* key `_mode` specifies name of current runtime environment.
+* key `_modes` specifies a list of names of supported runtime environments;
+* key `_mode` specifies a name of the current runtime environment.
 
 Other keys in file can contain parameters, required for your python program.
 Let's have a look at a file named `config.yaml` with one runtime 
@@ -171,8 +171,15 @@ databases:
 * if it equals to `ci` `cfg('databases.defaul.host')` yields `db`;
 * otherwise, exception is raised.
 
-Same with `databases.defaul.password`:
+Same with `databases.default.password`:
 * If environment variable `ENVIRONMENT_TYPE` equals to `production`,
-`cfg('databases.defaul.password')` is loaded from environment variable `DB_PASSWORD`;
-* if it equals to `ci` `cfg('databases.defaul.password')` yields `my_password`;
+`cfg('databases.default.password')` is loaded from environment variable `DB_PASSWORD`;
+* if it equals to `ci` `cfg('databases.default.password')` yields `my_password`;
 * and so on.
+
+## Tests
+Run test:
+```bash
+pip install -r requirements.txt
+pytest
+```
